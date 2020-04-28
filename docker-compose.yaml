@@ -1,0 +1,36 @@
+version: "3.7"
+services:
+    postgres:
+      image: postgres:alpine
+      env_file: .env
+      volumes:
+        - ./data:/data:cached
+        - postgres-data:/var/lib/postgres/data
+      ports:
+      - 5432:5432
+    adminer:
+      image: adminer
+      depends_on:
+        - postgres
+      ports:
+        - 8080:8080
+    api:
+      build:
+        context: ./docker/node-with-make
+        dockerfile: Dockerfile
+      env_file:
+        - .env
+        - ./projects/api/.env
+      environment:
+        PORT: 3001
+      depends_on:
+        - postgres
+      volumes:
+        - ./projects/api:/app
+      working_dir: /app
+      ports:
+        - 3001:3001
+      command: sh -c "make install && make load-fixtures && make start-server"
+
+volumes:
+    postgres-data:
